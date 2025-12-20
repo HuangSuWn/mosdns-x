@@ -43,7 +43,7 @@ func newLimitIPPlugin(bp *coremain.BP, args *Args) *limitIPPlugin {
 
 func (p *limitIPPlugin) Exec(ctx context.Context, qCtx *query_context.Context, next executable_seq.ExecutableChainNode) error {
     r := qCtx.R()
-    
+
     if r == nil || len(r.Answer) <= p.limit {
         return executable_seq.ExecChainNode(ctx, qCtx, next)
     }
@@ -51,22 +51,30 @@ func (p *limitIPPlugin) Exec(ctx context.Context, qCtx *query_context.Context, n
     w := 0
     ipCount := 0
 
-    for _, rr := range r.Answer {
+    for i, rr := range r.Answer {
         h := rr.Header().Rrtype
-        
+
+        shouldKeep := true
+
         if h == dns.TypeA || h == dns.TypeAAAA {
             if ipCount < p.limit {
-                r.Answer[w] = rr
-                w++
                 ipCount++
+            } else {
+                shouldKeep = false
             }
-        } else {
-            r.Answer[w] = rr
+        }
+
+        if shouldKeep {
+            if w != i {
+                r.Answer[w] = rr
+            }
             w++
         }
     }
-
-    r.Answer = r.Answer[:w]
+    
+    if w < len(r.Answer) {
+        r.Answer = r.Answer[:w]
+    }
 
     return executable_seq.ExecChainNode(ctx, qCtx, next)
 }
