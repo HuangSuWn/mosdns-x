@@ -44,6 +44,8 @@ import (
 	_ "github.com/pmkol/mosdns-x/plugin/executable/sequence"
 	_ "github.com/pmkol/mosdns-x/plugin/executable/sleep"
 	_ "github.com/pmkol/mosdns-x/plugin/executable/ttl"
+	_ "github.com/pmkol/mosdns-x/plugin/executable/limit_ip"
+	_ "github.com/pmkol/mosdns-x/plugin/matcher/query_is_bg_update"
 	_ "github.com/pmkol/mosdns-x/plugin/matcher/query_matcher"
 	_ "github.com/pmkol/mosdns-x/plugin/matcher/response_matcher"
 )
