@@ -55,6 +55,14 @@ type HandlerOpts struct {
 	// "True-Client-IP" "X-Real-IP" "X-Forwarded-For" will parse automatically.
 	SrcIPHeader string
 
+	// HealthPath specifies the health check endpoint path.
+	// Default is "/health"
+	HealthPath string
+
+	// RedirectURL specifies the URL to redirect when accessing non-DNS paths.
+	// If empty, returns 404 for non-DNS paths.
+	RedirectURL string
+
 	// Logger specifies the logger which Handler writes its log to.
 	// Default is a nop logger.
 	Logger *zap.Logger
@@ -66,6 +74,9 @@ func (opts *HandlerOpts) Init() error {
 	}
 	if opts.Logger == nil {
 		opts.Logger = nopLogger
+	}
+	if opts.HealthPath == "" {
+		opts.HealthPath = "/health"
 	}
 	return nil
 }
@@ -133,6 +144,20 @@ func (h *Handler) ServeHTTP(w ResponseWriter, req Request) {
 		}
 	} else {
 		meta.SetProtocol(C.ProtocolHTTP)
+	}
+
+	// Handle health check endpoint
+	if h.opts.HealthPath != "" && req.URL().Path == h.opts.HealthPath {
+		w.WriteHeader(http.StatusOK)
+		w.Write([]byte("OK"))
+		return
+	}
+
+	// Handle redirect for root or non-DNS paths
+	if h.opts.RedirectURL != "" && (req.URL().Path == "/" || (len(h.opts.Path) != 0 && req.URL().Path != h.opts.Path)) {
+		w.Header().Set("Location", h.opts.RedirectURL)
+		w.WriteHeader(http.StatusFound)
+		return
 	}
 
 	// check url path
