@@ -52,7 +52,9 @@ func init() {
 
 func loadOrCreateKey() ([]byte, error) {
 	execPath, _ := os.Executable()
-	keyFile := filepath.Join(filepath.Dir(execPath), ".mosdns_stateless_reset.key")
+	execDir := filepath.Dir(execPath)
+	keyDir := filepath.Join(execDir, "key")
+	keyFile := filepath.Join(keyDir, ".mosdns_stateless_reset.key")
 	
 	if data, err := os.ReadFile(keyFile); err == nil && len(data) == 32 {
 		log.Printf("[INFO] Loaded stateless reset key from: %s", keyFile)
@@ -63,6 +65,8 @@ func loadOrCreateKey() ([]byte, error) {
 	if _, err := rand.Read(key); err != nil {
 		return nil, err
 	}
+
+	os.MkdirAll(keyDir, 0755)
 	
 	if err := os.WriteFile(keyFile, key, 0600); err != nil {
 		return nil, err
